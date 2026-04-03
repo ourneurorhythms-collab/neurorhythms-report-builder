@@ -733,6 +733,11 @@
 </style>
 
 <script>
+// ── GLOBAL API KEY STORE ─────────────────────────────────────────────────────
+// Declared in the first script block so ALL subsequent script blocks can access it.
+// window._apiKeyMemory survives Tracking Prevention that blocks localStorage.
+window._apiKeyMemory = '';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // NEURO RHYTHMS — CONNECTIVITY ENGINE v1.0
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1205,6 +1210,11 @@ if (typeof module !== 'undefined' && module.exports) {
 
 </script>
 <script>
+// ── GLOBAL API KEY STORE ──────────────────────────────────────────────────
+// Declared first so ALL script blocks can access it.
+// window._apiKeyMemory survives Tracking Prevention that blocks localStorage.
+window._apiKeyMemory = '';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // NEURO RHYTHMS — CONNECTIVITY UI v1.0
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2955,27 +2965,6 @@ if (typeof module !== 'undefined' && module.exports) {
   </div>
 </div>
 
-<!-- REPORT LOG DETAIL MODAL -->
-<div class="rl-overlay hidden" id="rl-overlay" onclick="if(event.target===this)closeRL()">
-  <div class="rl-modal">
-    <div class="rl-header">
-      <div>
-        <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--navy)" id="rl-modal-title">QEEG Report</div>
-        <div style="font-size:13px;color:var(--gray);margin-top:3px" id="rl-modal-sub"></div>
-      </div>
-      <button onclick="closeRL()" style="width:30px;height:30px;border-radius:50%;border:none;background:var(--light);cursor:pointer;font-size:15px;flex-shrink:0">&#x2715;</button>
-    </div>
-    <div class="rl-body" id="rl-modal-body"></div>
-    <div class="rl-footer" style="justify-content:space-between">
-      <button onclick="deleteReportLog()" style="background:none;border:1.5px solid var(--pink);color:var(--pink);padding:7px 16px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">&#x1F5D1; Delete</button>
-      <div style="display:flex;gap:10px;align-items:center">
-        <button onclick="closeRL()" style="background:none;border:1.5px solid var(--rule);color:var(--gray);padding:7px 16px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">Close</button>
-        <button onclick="loadReportIntoBuilder()" style="background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;padding:7px 20px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:7px">&#x270F;&#xFE0F; Open in Report Builder</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ════════════════════════════════════════════════════════════
      STATE
 ════════════════════════════════════════════════════════════ -->
@@ -3410,6 +3399,10 @@ SECTIONS.baseline = () => {
 };
 /* ── BRAIN MAPS ── */
 SECTIONS.maps = () => {
+  // Clear registry on each render — prevents unbounded memory accumulation
+  Object.keys(_mapGridRegistry).forEach(k => delete _mapGridRegistry[k]);
+  _mapGridCounter = 0;
+
   // helper: render uploaded image array as thumbnail grid
   function mapThumbGrid(arr, label) {
     if (!arr || arr.length === 0) return '';
@@ -4662,17 +4655,14 @@ Keep responses concise, clinically grounded, and actionable. Use plain language 
 ══════════════════════════════════════════════════════════════ */
 
 // ── API KEY MANAGEMENT ───────────────────────────────────────────────────────
-// API key stored in memory (primary) + localStorage (fallback for persistence)
-// Memory store survives Tracking Prevention that blocks localStorage on some hosts
-let _apiKeyMemory = '';
 function getApiKey() {
-  if (_apiKeyMemory) return _apiKeyMemory;
+  if (window._apiKeyMemory) return window._apiKeyMemory;
   try { return localStorage.getItem('nr_api_key') || ''; } catch(e) { return ''; }
 }
 function saveApiKey() {
   const val = document.getElementById('api-key-input')?.value?.trim();
   if (!val) return;
-  _apiKeyMemory = val; // always works
+  window._apiKeyMemory = val; // global — survives across all script blocks
   try { localStorage.setItem('nr_api_key', val); } catch(e) {} // best-effort
   updateApiKeyIndicator();
   const msg = document.getElementById('api-key-msg');
@@ -4690,8 +4680,9 @@ function toggleApiKeyInput(e) {
   }
 }
 // Pre-load API key from localStorage into memory on page load
-try { const _saved = localStorage.getItem('nr_api_key'); if (_saved) _apiKeyMemory = _saved; } catch(e) {}
+try { const _saved = localStorage.getItem('nr_api_key'); if (_saved) window._apiKeyMemory = _saved; } catch(e) {}
 
+try { const _s = localStorage.getItem('nr_api_key'); if (_s) window._apiKeyMemory = _s; } catch(e) {}
 function updateApiKeyIndicator() {
   const dot = document.getElementById('api-key-indicator');
   if (!dot) return;
@@ -5935,39 +5926,41 @@ function aovAddToViewer(src) {
 }
 
 function _doSendToAssessment(src, phase) {
-  // Open the overlay for the right phase
+  // Queue the image BEFORE opening overlay so it's ready when overlay renders
+  if (!AOV.pendingImages) AOV.pendingImages = [];
+  if (!AOV.sessionImages) AOV.sessionImages = [];
+  AOV.pendingImages.push(src);
+  AOV.sessionImages.push(src);
+  // Open overlay — it will render with pendingImages already populated
   openAssessmentOverlay(phase);
-  // Give overlay a moment to render, then add to tray + pending
+  // After overlay DOM is ready, add thumb to tray + preview row
   setTimeout(() => {
-    AOV.sessionImages.push(src);
-    aovAddToTray(src);
-    // Also queue in pending send
-    if (!AOV.pendingImages) AOV.pendingImages = [];
-    AOV.pendingImages.push(src);
+    try { aovAddToTray(src); } catch(e) {}
+    // Add thumb to pending preview row
     const preview = document.getElementById('aov-img-preview-row');
     if (preview) {
-      const idx = AOV.pendingImages.length - 1;
+      const idx = AOV.pendingImages.indexOf(src);
       const thumb = document.createElement('div');
       thumb.className = 'aov-img-thumb';
-      thumb.id = 'aov-pending-thumb-' + idx;
+      thumb.style.cssText = 'position:relative;display:inline-block';
       const tImg = document.createElement('img');
       tImg.src = src;
       tImg.style.cssText = 'height:52px;border-radius:6px;border:1px solid #CBD5E0;display:block';
       const tBtn = document.createElement('button');
       tBtn.textContent = '✕';
       tBtn.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);color:white;border:none;border-radius:3px;padding:1px 5px;cursor:pointer;font-size:10px;line-height:1.4';
-      tBtn.onclick = function() { AOV.pendingImages.splice(idx,1); thumb.remove(); };
+      tBtn.onclick = function() {
+        const i = AOV.pendingImages.indexOf(src);
+        if (i >= 0) AOV.pendingImages.splice(i, 1);
+        thumb.remove();
+      };
       thumb.appendChild(tImg);
       thumb.appendChild(tBtn);
       preview.appendChild(thumb);
     }
-    // Flash the input to draw attention
     const inp = document.getElementById('aov-inp');
-    if (inp) {
-      inp.placeholder = 'Image loaded — ask a question about it…';
-      inp.focus();
-    }
-  }, 350);
+    if (inp) { inp.placeholder = 'Image loaded — ask a question about it…'; inp.focus(); }
+  }, 600);
 }
 
 // ── Map thumb send to assessment ─────────────────────────────────────────────
@@ -6116,6 +6109,7 @@ window.aovConfirmImport = function() {
   const imgs = window._aovImportImages;
   if (!sel || !imgs) return;
 
+  if (!AOV.pendingImages) AOV.pendingImages = [];
   const preview = document.getElementById('aov-img-preview-row');
   sel.forEach(i => {
     const src = imgs[i].src;
@@ -7496,6 +7490,7 @@ const IMAGE_KEYS = [
 const ARRAY_IMAGE_KEYS = ['rawEEGExtraImgs','stackedSpecExtraImgs','headMapsExtraImgs','headMapsAdditionalImgs','peakAlphaExtraImgs','networkConnImgs'];
 const _imgStore = {}; // { [clientId_reportNum]: imagePayload }
 
+
 function imgKey(clientId, reportNumber) { return clientId + '_r' + reportNumber; }
 
 const IMG_STORE_PREFIX = 'nr_imgs_';
@@ -8364,8 +8359,14 @@ function dashGenerateCheckin() {
   if (!dmCurrent) return;
   const c = dmCurrent;
   const hasBaseline = c.baselineScores && c.baselineScores.length > 0;
-  const practEmail = STATE.practitionerEmail || prompt('Enter your email address to receive responses:', 'ourneurorhythms@gmail.com');
-  if (!practEmail) return;
+  // Remember practitioner email across sessions
+  let practEmail = '';
+  try { practEmail = localStorage.getItem('nr_pract_email') || ''; } catch(e) {}
+  if (!practEmail) {
+    practEmail = prompt('Enter your email address to receive check-in responses:', 'ourneurorhythms@gmail.com');
+    if (!practEmail) return;
+    try { localStorage.setItem('nr_pract_email', practEmail); } catch(e) {}
+  }
 
   let domainsForCheckin;
 

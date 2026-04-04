@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- NR-ReportBuilder v5.16 -->
+<!-- NR-ReportBuilder v5.17 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -5909,10 +5909,13 @@ function aovAddToTray(src) {
   tBtn.onclick = function(e) { e.stopPropagation(); aovRemoveFromTray(idx, thumb); };
 
   // Single click on thumbnail = immediately send this image to AI
+  const _thumbSrc = src; // capture in local var to avoid closure issues
+  thumb.dataset.src = '1'; // mark as having src
   thumb.onclick = function(e) {
     if (e.target === tBtn) return;
-    // Set as the only pending image and send immediately
-    AOV.pendingImages = [src];
+    const imgSrc = _thumbSrc;
+    console.log('[tray click] src length:', imgSrc ? imgSrc.length : 0);
+    AOV.pendingImages = [imgSrc];
     // Show in preview row briefly
     const previewRow = document.getElementById('aov-img-preview-row');
     if (previewRow) {
@@ -6017,17 +6020,38 @@ function aovAddToViewer(src) {
 }
 
 function _doSendToAssessment(src, phase) {
-  // Add to session images store
   if (!AOV.sessionImages) AOV.sessionImages = [];
   AOV.sessionImages.push(src);
+  // Queue the image immediately
+  if (!AOV.pendingImages) AOV.pendingImages = [];
+  AOV.pendingImages = [src];
   // Open overlay
   openAssessmentOverlay(phase);
-  // After overlay DOM is ready, add to tray — user clicks ATTACH button to queue it
+  // After overlay DOM ready: add to tray, populate preview row, focus input
   setTimeout(() => {
-    try { aovAddToTray(src); } catch(e) { console.warn('aovAddToTray:', e); }
+    try { aovAddToTray(src); } catch(e) {}
+    // Show preview thumbnail in input row
+    const previewRow = document.getElementById('aov-img-preview-row');
+    if (previewRow) {
+      previewRow.innerHTML = '';
+      const pt = document.createElement('div');
+      pt.style.cssText = 'position:relative;display:inline-block';
+      const pi = document.createElement('img');
+      pi.src = src;
+      pi.style.cssText = 'height:48px;border-radius:6px;border:2px solid #4A90D9;display:block';
+      const pb = document.createElement('button');
+      pb.textContent = '✕';
+      pb.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:3px;padding:1px 5px;cursor:pointer;font-size:10px';
+      pb.onclick = function() { AOV.pendingImages = []; pt.remove(); };
+      pt.appendChild(pi); pt.appendChild(pb);
+      previewRow.appendChild(pt);
+    }
     const inp = document.getElementById('aov-inp');
-    if (inp) { inp.focus(); inp.placeholder = 'Image in tray — click ATTACH then ask a question…'; }
-  }, 400);
+    if (inp) {
+      inp.focus();
+      inp.placeholder = 'Image attached — type a question and Send, or just click Send →';
+    }
+  }, 500);
 }
 
 // ── Map thumb send to assessment ─────────────────────────────────────────────

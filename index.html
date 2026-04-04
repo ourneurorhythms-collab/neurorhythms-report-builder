@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- NR-ReportBuilder v5.15 -->
+<!-- NR-ReportBuilder v5.16 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -4603,7 +4603,7 @@ Keep responses concise, clinically grounded, and actionable. Use plain language 
         method:'POST',
         headers:{'Content-Type':'application/json','x-api-key':_k1,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
         body: JSON.stringify({
-          model:'claude-haiku-4-5-20251001',
+          model:'claude-haiku-4-5',
           max_tokens:1000,
           system: systemPrompt,
           messages
@@ -5331,7 +5331,7 @@ window.aovSend = async () => {
     const messages = [...historyMsgs, { role:'user', content: userContent }];
 
     // Use sonnet for image analysis, haiku for text-only
-    const model = images.length ? 'claude-sonnet-4-5-20251001' : 'claude-haiku-4-5-20251001';
+    const model = images.length ? 'claude-sonnet-4-5' : 'claude-haiku-4-5';
 
     console.log('[aovSend] key length:', _apiKey.length, 'images:', images.length, 'model:', model);
     if (images.length) console.log('[aovSend] first image prefix:', images[0]?.slice(0,50));
@@ -6288,7 +6288,7 @@ Provide a structured clinical review working through each level. Be concise — 
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-haiku-4-5',
         max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }]
       })

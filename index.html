@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- NR-ReportBuilder v5.13 -->
+<!-- NR-ReportBuilder v5.14 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -4669,8 +4669,9 @@ function saveApiKey() {
   const val = document.getElementById('api-key-input')?.value?.trim();
   if (!val) return;
   window._apiKeyMemory = val;
-  getApiKey._stored = val; // extra redundant store on the function itself
-  try { localStorage.setItem('nr_api_key', val); } catch(e) {}
+  getApiKey._stored = val;
+  console.log('[saveApiKey] saved key length:', val.length, 'starts with:', val.slice(0,10));
+  try { localStorage.setItem('nr_api_key', val); } catch(e) { console.warn('[saveApiKey] localStorage blocked:', e.message); }
   updateApiKeyIndicator();
   const msg = document.getElementById('api-key-msg');
   if (msg) { msg.style.display='block'; setTimeout(()=>{ msg.style.display='none'; toggleApiKeyInput(); },1200); }
@@ -5311,7 +5312,13 @@ window.aovSend = async () => {
       userContent = [];
       images.forEach(dataUrl => {
         const m = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,([\s\S]+)$/);
-        if (m) userContent.push({ type:'image', source:{ type:'base64', media_type:m[1], data:m[2] } });
+        if (m) {
+          // Trim whitespace/newlines from base64 data - they corrupt the payload
+          const cleanB64 = m[2].replace(/\s/g, '');
+          // Normalize media type to lowercase
+          const mediaType = m[1].toLowerCase();
+          userContent.push({ type:'image', source:{ type:'base64', media_type: mediaType, data: cleanB64 } });
+        }
       });
       userContent.push({ type:'text', text: text || 'Please analyze this image in the context of my current assessment.' });
     } else {
@@ -5326,6 +5333,8 @@ window.aovSend = async () => {
     // Use sonnet for image analysis, haiku for text-only
     const model = images.length ? 'claude-sonnet-4-5-20251001' : 'claude-haiku-4-5-20251001';
 
+    console.log('[aovSend] key length:', _apiKey.length, 'images:', images.length, 'model:', model);
+    if (images.length) console.log('[aovSend] first image prefix:', images[0]?.slice(0,50));
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -5336,6 +5345,7 @@ window.aovSend = async () => {
       },
       body: JSON.stringify({ model, max_tokens: 1500, system: sys, messages })
     });
+    console.log('[aovSend] response status:', res.status);
 
     if (!res.ok && (res.status === 401 || res.status === 404)) {
       window._apiKeyMemory = '';

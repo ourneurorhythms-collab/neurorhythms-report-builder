@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- NR-ReportBuilder v5.21 -->
+<!-- NR-ReportBuilder v5.22 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -5295,12 +5295,16 @@ window.aovSend = async () => {
 
     const p1ctx = 'PHASE 1 — Raw EEG: ICA cleaning, paroxysmal activity screening, amplitude irregularities, residual artifact. Spectrals: 1/f slope, PDR + A/P gradient, frontal alpha asymmetry (F3 vs F4), theta/beta ratio, high beta, alpha blocking EC vs EO, SMR 12-15Hz, IAPF. Headmaps: Z-score topographic maps confirming spectral findings spatially.';
     const p2ctx = 'PHASE 2 — Track A: ICA component review (topographic map, dipole, spectrum, artifact pattern) → LORETA source localization → Power2Power coupling (theta-gamma=working memory, theta-beta=arousal, alpha-gamma=attention). Track B: ROI FC matrix 7 regions (Cingulate, Prefrontal, Frontal, Temporal, Parietal, Central, Occipital). Alpha should be posterior-dominant.';
-    const sys = 'You are an AI clinical assistant in the Neuro Rhythms QEEG Report Builder supporting practitioner Justin Reid (M.S. Psychophysiology, BCN). SCOPE: optimal functioning, neurofeedback, neuromodulation, biofeedback — NOT diagnosis. Frame as considerations and neurophysiological associations only. Never say "do X" or "the protocol should be Y".'
-      + ' ' + (phase === 'p1' ? p1ctx : p2ctx)
-      + (flagged.length ? ' Current flags: ' + flagged.join(', ') + '.' : '')
+    const sys = 'You are a QEEG clinical analysis assistant in the Neuro Rhythms Report Builder, supporting Justin Reid (M.S. Psychophysiology, BCN). '
+      + 'SCOPE: neurofeedback, neuromodulation, biofeedback for optimal functioning — NOT medical diagnosis or treatment. '
+      + 'LANGUAGE: Use precise neurophysiological terminology. Frame findings as observations and associations, never directives. '
+      + 'ACCURACY: Be specific and conservative. Only describe what is clearly visible. Do not infer beyond the data. Flag uncertainty explicitly. '
+      + 'FORMAT: Lead with the most clinically significant observation. Use short paragraphs. Bold key terms. '
+      + 'When analyzing images: describe exactly what you see — band amplitudes, topographic distribution, asymmetries, slope, peaks — before interpreting. '
+      + (phase === 'p1' ? p1ctx : p2ctx)
+      + (flagged.length ? ' Active flags: ' + flagged.join(', ') + '.' : '')
       + (p1flags.length ? ' Phase 1 flags carried forward: ' + p1flags.join(', ') + '.' : '')
-      + (nd ? ' Selected node: ' + nd.title + ' — ' + (nd.desc||'') + '.' : '')
-      + ' When images are shared analyze carefully and provide neurophysiological context. Respond concisely.';
+      + (nd ? ' Selected node: ' + nd.title + ' — ' + (nd.desc||'') + '.' : '');
 
     // Check API key - if missing, show inline prompt
     const _apiKey = getApiKey();
@@ -5337,7 +5341,7 @@ window.aovSend = async () => {
     const messages = [...historyMsgs, { role:'user', content: userContent }];
 
     // Use sonnet for image analysis, haiku for text-only
-    const model = images.length ? 'claude-sonnet-4-5' : 'claude-haiku-4-5';
+    const model = 'claude-sonnet-4-5'; // sonnet for all clinical analysis
 
     console.log('[aovSend] key length:', _apiKey.length, 'images:', images.length, 'model:', model);
     if (images.length) console.log('[aovSend] first image prefix:', images[0]?.slice(0,50));
@@ -5349,7 +5353,7 @@ window.aovSend = async () => {
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
-      body: JSON.stringify({ model, max_tokens: 1500, system: sys, messages })
+      body: JSON.stringify({ model, max_tokens: 2000, system: sys, messages })
     });
     console.log('[aovSend] response status:', res.status);
 

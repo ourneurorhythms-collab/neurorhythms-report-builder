@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- NR-ReportBuilder v5.17 -->
+<!-- NR-ReportBuilder v5.18 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -5263,12 +5263,17 @@ window.aovSend = async () => {
   if (!inp) { console.error('[AOV] No input element found!'); return; }
 
   const text = inp.value.trim();
+  // Check both pendingImages and _queuedImage fallback
+  if (AOV._queuedImage && (!AOV.pendingImages || !AOV.pendingImages.length)) {
+    AOV.pendingImages = [AOV._queuedImage];
+  }
   const images = [...(AOV.pendingImages || [])];
   if (!text && !images.length) return;
 
   // Clear input + pending images
   inp.value = ''; inp.style.height = 'auto';
   AOV.pendingImages = [];
+  AOV._queuedImage = null; // clear queued image after send
   const previewRow = document.getElementById('aov-img-preview-row');
   if (previewRow) previewRow.innerHTML = '';
   if (sb) sb.disabled = true;
@@ -6022,35 +6027,34 @@ function aovAddToViewer(src) {
 function _doSendToAssessment(src, phase) {
   if (!AOV.sessionImages) AOV.sessionImages = [];
   AOV.sessionImages.push(src);
-  // Queue the image immediately
-  if (!AOV.pendingImages) AOV.pendingImages = [];
-  AOV.pendingImages = [src];
+  // Store directly on AOV — survives overlay recreate
+  AOV._queuedImage = src;
   // Open overlay
   openAssessmentOverlay(phase);
-  // After overlay DOM ready: add to tray, populate preview row, focus input
+  // After overlay DOM ready: show in tray + preview row
   setTimeout(() => {
-    try { aovAddToTray(src); } catch(e) {}
-    // Show preview thumbnail in input row
+    // Re-set from AOV._queuedImage in case pendingImages got cleared
+    if (AOV._queuedImage) AOV.pendingImages = [AOV._queuedImage];
+    try { aovAddToTray(AOV._queuedImage || src); } catch(e) {}
     const previewRow = document.getElementById('aov-img-preview-row');
     if (previewRow) {
       previewRow.innerHTML = '';
+      const imgSrc = AOV._queuedImage || src;
       const pt = document.createElement('div');
       pt.style.cssText = 'position:relative;display:inline-block';
       const pi = document.createElement('img');
-      pi.src = src;
+      pi.src = imgSrc;
       pi.style.cssText = 'height:48px;border-radius:6px;border:2px solid #4A90D9;display:block';
       const pb = document.createElement('button');
       pb.textContent = '✕';
       pb.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:3px;padding:1px 5px;cursor:pointer;font-size:10px';
-      pb.onclick = function() { AOV.pendingImages = []; pt.remove(); };
+      pb.onclick = function() { AOV.pendingImages = []; AOV._queuedImage = null; pt.remove(); };
       pt.appendChild(pi); pt.appendChild(pb);
       previewRow.appendChild(pt);
     }
     const inp = document.getElementById('aov-inp');
-    if (inp) {
-      inp.focus();
-      inp.placeholder = 'Image attached — type a question and Send, or just click Send →';
-    }
+    if (inp) { inp.focus(); inp.placeholder = 'Image attached — click Send → to analyze'; }
+    console.log('[_doSendToAssessment] pendingImages after setup:', AOV.pendingImages ? AOV.pendingImages.length : 0);
   }, 500);
 }
 

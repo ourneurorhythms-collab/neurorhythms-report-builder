@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- NR-ReportBuilder v5.12 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -4563,7 +4564,7 @@ Keep responses concise, clinically grounded, and actionable. Use plain language 
     if (images.length) {
       userApiContent = [];
       images.forEach(dataUrl => {
-        const match = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/i);
+        const match = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,([\s\S]+)$/);
         if (match) {
           userApiContent.push({ type:'image', source:{ type:'base64', media_type:match[1], data:match[2] } });
         }
@@ -5236,6 +5237,21 @@ window.aovAddImages = function(input) {
   input.value = '';
 };
 
+// Direct image send — bypasses pendingImages queue entirely
+// Called when user clicks a tray image's send button
+window.aovSendImage = async function(src) {
+  if (!AOV.pendingImages) AOV.pendingImages = [];
+  AOV.pendingImages = [src]; // set exactly this image
+  // Reset tray ATTACH states
+  document.querySelectorAll('[data-tray-src]').forEach(el => el.remove());
+  document.querySelectorAll('.aov-float-thumb').forEach(th => {
+    const ab = th.querySelector('button:last-child');
+    if (ab) { ab.textContent = '📎 ATTACH'; ab.style.background = 'rgba(26,26,46,.82)'; }
+    th.style.outline = '';
+  });
+  await window.aovSend();
+};
+
 window.aovSend = async () => {
   // Always grab button reference first for guaranteed re-enable
   const sb = document.getElementById('aov-sendbtn');
@@ -5281,7 +5297,7 @@ window.aovSend = async () => {
     if (images.length) {
       userContent = [];
       images.forEach(dataUrl => {
-        const m = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
+        const m = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,([\s\S]+)$/);
         if (m) userContent.push({ type:'image', source:{ type:'base64', media_type:m[1], data:m[2] } });
       });
       userContent.push({ type:'text', text: text || 'Please analyze this image in the context of my current assessment.' });
@@ -5862,11 +5878,21 @@ function aovAddToTray(src) {
   tBtn.textContent = '✕';
   tBtn.title = 'Remove from tray';
   tBtn.onclick = function(e) { e.stopPropagation(); aovRemoveFromTray(idx, thumb); };
-  // Analyze button — directly queues this image into the input and focuses
+  // Bottom bar with two buttons: ATTACH (queue) + SEND (immediate)
+  const barDiv = document.createElement('div');
+  barDiv.style.cssText = 'position:absolute;bottom:0;left:0;right:0;display:flex;gap:1px;z-index:2';
   const aBtn = document.createElement('button');
-  aBtn.title = 'Attach this image to your next message';
-  aBtn.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:rgba(26,26,46,.82);color:white;border:none;border-radius:0 0 4px 4px;padding:3px 4px;cursor:pointer;font-size:9px;font-weight:700;line-height:1.3;z-index:2;text-align:center;letter-spacing:.3px';
+  aBtn.title = 'Attach to next message';
+  aBtn.style.cssText = 'flex:1;background:rgba(26,26,46,.82);color:white;border:none;border-radius:0 0 0 4px;padding:3px 2px;cursor:pointer;font-size:8px;font-weight:700;line-height:1.3;text-align:center;letter-spacing:.2px';
   aBtn.textContent = '📎 ATTACH';
+  const sBtn = document.createElement('button');
+  sBtn.title = 'Send this image to AI now';
+  sBtn.style.cssText = 'flex:1;background:rgba(74,144,217,.9);color:white;border:none;border-radius:0 0 4px 0;padding:3px 2px;cursor:pointer;font-size:8px;font-weight:700;line-height:1.3;text-align:center;letter-spacing:.2px';
+  sBtn.textContent = '▶ SEND';
+  sBtn.onclick = function(e) {
+    e.stopPropagation();
+    window.aovSendImage(src);
+  };
   aBtn.onclick = function(e) {
     e.stopPropagation();
     // Toggle: if already pending, remove; otherwise add
@@ -5917,9 +5943,11 @@ function aovAddToTray(src) {
       if (inp) { inp.focus(); inp.placeholder = 'Image attached — type your question and click Send →'; }
     }
   };
+  barDiv.appendChild(aBtn);
+  barDiv.appendChild(sBtn);
   thumb.appendChild(tImg);
   thumb.appendChild(tBtn);
-  thumb.appendChild(aBtn);
+  thumb.appendChild(barDiv);
   imgs.appendChild(thumb);
   panel.classList.add('visible');
   if (_floatMinimized) aovFloatMinimize();

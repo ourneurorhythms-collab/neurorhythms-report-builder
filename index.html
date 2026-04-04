@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- NR-ReportBuilder v5.20 -->
+<!-- NR-ReportBuilder v5.21 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -5265,11 +5265,7 @@ window.aovSend = async () => {
   const text = inp.value.trim();
   // Build image list — always prefer _queuedImage if set
   let images = [];
-  if (AOV._queuedImage) {
-    // _queuedImage may be a string or array — normalize to array of strings
-    const q = AOV._queuedImage;
-    images = Array.isArray(q) ? q : [q];
-  } else if (AOV.pendingImages && AOV.pendingImages.length) {
+  if (AOV.pendingImages && AOV.pendingImages.length) {
     images = [...AOV.pendingImages];
   }
   console.log('[aovSend] text:', text.length, 'images:', images.length);
@@ -6017,35 +6013,17 @@ function aovAddToViewer(src) {
 function _doSendToAssessment(src, phase) {
   if (!AOV.sessionImages) AOV.sessionImages = [];
   AOV.sessionImages.push(src);
-  // Store directly on AOV — survives overlay recreate
-  AOV._queuedImage = src;
+  // Do NOT auto-queue — user will click ANALYZE button to send
+  AOV._queuedImage = null;
+  AOV.pendingImages = [];
   // Open overlay
   openAssessmentOverlay(phase);
-  // After overlay DOM ready: show in tray + preview row
+  // After overlay DOM ready: add to tray only
   setTimeout(() => {
-    // Re-set from AOV._queuedImage in case pendingImages got cleared
-    if (AOV._queuedImage) AOV.pendingImages = [AOV._queuedImage];
-    try { aovAddToTray(AOV._queuedImage || src); } catch(e) {}
-    const previewRow = document.getElementById('aov-img-preview-row');
-    if (previewRow) {
-      previewRow.innerHTML = '';
-      const imgSrc = AOV._queuedImage || src;
-      const pt = document.createElement('div');
-      pt.style.cssText = 'position:relative;display:inline-block';
-      const pi = document.createElement('img');
-      pi.src = imgSrc;
-      pi.style.cssText = 'height:48px;border-radius:6px;border:2px solid #4A90D9;display:block';
-      const pb = document.createElement('button');
-      pb.textContent = '✕';
-      pb.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:white;border:none;border-radius:3px;padding:1px 5px;cursor:pointer;font-size:10px';
-      pb.onclick = function() { AOV.pendingImages = []; AOV._queuedImage = null; pt.remove(); };
-      pt.appendChild(pi); pt.appendChild(pb);
-      previewRow.appendChild(pt);
-    }
+    try { aovAddToTray(src); } catch(e) {}
     const inp = document.getElementById('aov-inp');
-    if (inp) { inp.focus(); inp.placeholder = 'Image attached — click Send → to analyze'; }
-    console.log('[_doSendToAssessment] pendingImages after setup:', AOV.pendingImages ? AOV.pendingImages.length : 0);
-  }, 500);
+    if (inp) { inp.placeholder = 'Image in tray — click image to zoom, click ▶ ANALYZE to send'; }
+  }, 400);
 }
 
 // ── Map thumb send to assessment ─────────────────────────────────────────────

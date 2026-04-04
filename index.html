@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- NR-ReportBuilder v5.12 -->
+<!-- NR-ReportBuilder v5.13 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -4661,13 +4661,16 @@ Keep responses concise, clinically grounded, and actionable. Use plain language 
 // ── API KEY MANAGEMENT ───────────────────────────────────────────────────────
 function getApiKey() {
   if (window._apiKeyMemory) return window._apiKeyMemory;
-  try { return localStorage.getItem('nr_api_key') || ''; } catch(e) { return ''; }
+  if (getApiKey._stored) return getApiKey._stored;
+  try { const k = localStorage.getItem('nr_api_key'); if (k) { window._apiKeyMemory = k; return k; } } catch(e) {}
+  return '';
 }
 function saveApiKey() {
   const val = document.getElementById('api-key-input')?.value?.trim();
   if (!val) return;
-  window._apiKeyMemory = val; // global — survives across all script blocks
-  try { localStorage.setItem('nr_api_key', val); } catch(e) {} // best-effort
+  window._apiKeyMemory = val;
+  getApiKey._stored = val; // extra redundant store on the function itself
+  try { localStorage.setItem('nr_api_key', val); } catch(e) {}
   updateApiKeyIndicator();
   const msg = document.getElementById('api-key-msg');
   if (msg) { msg.style.display='block'; setTimeout(()=>{ msg.style.display='none'; toggleApiKeyInput(); },1200); }
@@ -5292,6 +5295,16 @@ window.aovSend = async () => {
       + (nd ? ' Selected node: ' + nd.title + ' — ' + (nd.desc||'') + '.' : '')
       + ' When images are shared analyze carefully and provide neurophysiological context. Respond concisely.';
 
+    // Check API key - if missing, show inline prompt
+    const _apiKey = getApiKey();
+    if (!_apiKey) {
+      AOV.chat = (AOV.chat||[]).filter(m => !m.loading);
+      AOV.chat.push({r:'a', c: '🔑 <strong>API key required.</strong> Click <strong>API Key</strong> in the top bar, paste your key from console.anthropic.com, and click Save.'});
+      aovRenderChat();
+      if (sb) sb.disabled = false;
+      return;
+    }
+
     // Build message content
     let userContent;
     if (images.length) {
@@ -5317,16 +5330,16 @@ window.aovSend = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': getApiKey(),
+        'x-api-key': _apiKey,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({ model, max_tokens: 1500, system: sys, messages })
     });
 
-    if (!res.ok && res.status === 401) {
-      window._apiKeyMemory = ''; // clear bad key
-      throw new Error('Invalid API key. Click "Set API Key" in the top bar and re-enter your key from console.anthropic.com');
+    if (!res.ok && (res.status === 401 || res.status === 404)) {
+      window._apiKeyMemory = '';
+      throw new Error('API key invalid or missing. Click "Set API Key" in the top bar.');
     }
     const data = await res.json();
     if (data.error) {

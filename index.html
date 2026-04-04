@@ -4563,7 +4563,7 @@ Keep responses concise, clinically grounded, and actionable. Use plain language 
     if (images.length) {
       userApiContent = [];
       images.forEach(dataUrl => {
-        const match = dataUrl.match(/^data:(image\/[a-z+]+);base64,(.+)$/);
+        const match = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/i);
         if (match) {
           userApiContent.push({ type:'image', source:{ type:'base64', media_type:match[1], data:match[2] } });
         }
@@ -4593,8 +4593,10 @@ Keep responses concise, clinically grounded, and actionable. Use plain language 
       const _k1 = getApiKey();
       if (!_k1) {
         p1State.chatHistory = p1State.chatHistory.filter(m=>!m.loading);
-        p1State.chatHistory.push({ role:'ai', content:'⚠️ No API key set. Click the <b>API Key</b> button in the top bar.' });
-        rerender(); scrollChat(); return;
+        p1State.chatHistory.push({ role:'ai', content:'⚠️ No API key set. Click the <strong>API Key</strong> button in the top bar, paste your key, and click Save.' });
+        rerender(); scrollChat();
+        if (btn) btn.disabled = false;
+        return;
       }
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method:'POST',
@@ -4682,7 +4684,6 @@ function toggleApiKeyInput(e) {
 // Pre-load API key from localStorage into memory on page load
 try { const _saved = localStorage.getItem('nr_api_key'); if (_saved) window._apiKeyMemory = _saved; } catch(e) {}
 
-try { const _s = localStorage.getItem('nr_api_key'); if (_s) window._apiKeyMemory = _s; } catch(e) {}
 function updateApiKeyIndicator() {
   const dot = document.getElementById('api-key-indicator');
   if (!dot) return;
@@ -5341,6 +5342,8 @@ window.openAssessmentOverlay = function(phase) {
   ov.id = 'aov-overlay';
   ov.className = 'aov';
 
+  // Show API key status in overlay
+  var _keyOk = !!getApiKey();
   var p1flags = Object.keys(AOV.flags.p1||{}).filter(function(k){return AOV.flags.p1[k];});
   var p2CarryHTML = '';
   if (phase==='p2') {
@@ -5357,6 +5360,7 @@ window.openAssessmentOverlay = function(phase) {
         '<div class="aov-sub" id="aov-phase-sub">' + (phase==='p1'?'Phase 1 Assessment':'Phase 2 Assessment') + '</div>',
       '</div>',
       '<div class="aov-badge" id="aov-phase-badge">' + (phase==='p1'?'&#x1F52C; Raw EEG &middot; Spectrals &middot; Headmaps':'&#x1F52C; ICA &middot; LORETA &middot; Coupling &middot; ROI') + '</div>',
+      '<button onclick="toggleApiKeyInput(event)" title="' + (_keyOk?'API key set':'No API key — click to set') + '" style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:' + (_keyOk?'rgba(72,187,120,.15)':'rgba(255,100,100,.2)') + ';border:1px solid ' + (_keyOk?'rgba(72,187,120,.5)':'rgba(255,100,100,.5)') + ';color:' + (_keyOk?'#9AE6B4':'#FCA5A5') + ';font-size:11px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;white-space:nowrap"><span style=\"width:7px;height:7px;border-radius:50%;background:' + (_keyOk?'#48BB78':'#F87171') + ';flex-shrink:0\"></span>' + (_keyOk?'API Key ✓':'Set API Key') + '</button>',
     '</div>',
     '<div class="aov-scope">&#9888; Observations and considerations only &middot; All clinical decisions reviewed with supervisor and clinical team &middot; Not for diagnostic use</div>',
     p2CarryHTML,
@@ -5833,18 +5837,73 @@ function aovAddToTray(src) {
   const sz = _floatThumbSize;
   const thumb = document.createElement('div');
   thumb.className = 'aov-float-thumb';
-  thumb.style.cssText = `width:${sz}px;height:${sz}px`;
+  thumb.style.cssText = `width:${sz}px;height:${sz}px;position:relative`;
   const tImg = document.createElement('img');
   tImg.alt = '';
   tImg.onerror = function() { console.error('[tray] img load failed, prefix:', (src||"").slice(0,40)); };
   tImg.src = src;
   tImg.onclick = function() { aovFloatExpand(src); };
+  // Remove button (✕)
   const tBtn = document.createElement('button');
   tBtn.className = 'aov-float-thumb-remove';
   tBtn.textContent = '✕';
   tBtn.onclick = function(e) { e.stopPropagation(); aovRemoveFromTray(idx, thumb); };
+  // Pin button (📎) — queues image for next send
+  const pBtn = document.createElement('button');
+  pBtn.title = 'Attach to next message';
+  pBtn.style.cssText = 'position:absolute;bottom:3px;left:3px;background:rgba(74,144,217,.85);color:white;border:none;border-radius:3px;padding:2px 6px;cursor:pointer;font-size:10px;font-weight:700;line-height:1.4;z-index:2';
+  pBtn.textContent = '📎';
+  pBtn.onclick = function(e) {
+    e.stopPropagation();
+    if (!AOV.pendingImages) AOV.pendingImages = [];
+    if (AOV.pendingImages.includes(src)) {
+      // Already queued — remove it
+      AOV.pendingImages = AOV.pendingImages.filter(s => s !== src);
+      pBtn.style.background = 'rgba(74,144,217,.85)';
+      pBtn.textContent = '📎';
+      thumb.style.outline = '';
+      // Remove from preview row
+      const previewRow = document.getElementById('aov-img-preview-row');
+      if (previewRow) {
+        Array.from(previewRow.querySelectorAll('img')).forEach(img => {
+          if (img.src === src) img.closest('.aov-img-thumb')?.remove();
+        });
+      }
+    } else {
+      // Queue it
+      AOV.pendingImages.push(src);
+      pBtn.style.background = 'rgba(72,187,120,.9)';
+      pBtn.textContent = '✓';
+      thumb.style.outline = '2px solid #48BB78';
+      // Add to pending preview row
+      const previewRow = document.getElementById('aov-img-preview-row');
+      if (previewRow) {
+        const pt = document.createElement('div');
+        pt.className = 'aov-img-thumb';
+        pt.style.cssText = 'position:relative;display:inline-block';
+        const pi = document.createElement('img');
+        pi.src = src;
+        pi.style.cssText = 'height:52px;border-radius:6px;border:1px solid #CBD5E0;display:block';
+        const pb = document.createElement('button');
+        pb.textContent = '✕';
+        pb.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);color:white;border:none;border-radius:3px;padding:1px 5px;cursor:pointer;font-size:10px;line-height:1.4';
+        pb.onclick = function() {
+          AOV.pendingImages = AOV.pendingImages.filter(s => s !== src);
+          pt.remove();
+          pBtn.style.background = 'rgba(74,144,217,.85)';
+          pBtn.textContent = '📎';
+          thumb.style.outline = '';
+        };
+        pt.appendChild(pi); pt.appendChild(pb);
+        previewRow.appendChild(pt);
+      }
+      const inp = document.getElementById('aov-inp');
+      if (inp) { inp.placeholder = 'Image attached — ask a question…'; inp.focus(); }
+    }
+  };
   thumb.appendChild(tImg);
   thumb.appendChild(tBtn);
+  thumb.appendChild(pBtn);
   imgs.appendChild(thumb);
   panel.classList.add('visible');
   if (_floatMinimized) aovFloatMinimize();

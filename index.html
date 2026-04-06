@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- NR-ReportBuilder v5.22 -->
+<!-- NR-ReportBuilder v5.23 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -4603,18 +4603,42 @@ Keep responses concise, clinically grounded, and actionable. Use plain language 
         method:'POST',
         headers:{'Content-Type':'application/json','x-api-key':_k1,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
         body: JSON.stringify({
-          model:'claude-haiku-4-5',
-          max_tokens:1000,
+          model:'claude-sonnet-4-20250514',
+          max_tokens:1200,
+          stream: true,
           system: systemPrompt,
           messages
         })
       });
-      const data = await res.json();
       if (!res.ok && res.status === 401) { window._apiKeyMemory=''; throw new Error('Invalid API key — click API Key in top bar to reset'); }
-      if (data.error) throw new Error(data.error.message || data.error.type || 'API error');
-      const reply = data.content?.find(b=>b.type==='text')?.text || 'No response received.';
+      if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'API error'); }
+      // Streaming: show tokens as they arrive
       p1State.chatHistory = p1State.chatHistory.filter(m=>!m.loading);
-      p1State.chatHistory.push({ role:'ai', content: reply });
+      p1State.chatHistory.push({ role:'ai', content: '' });
+      const streamIdx = p1State.chatHistory.length - 1;
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const json = line.slice(6).trim();
+          if (json === '[DONE]') break;
+          try {
+            const evt = JSON.parse(json);
+            if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+              p1State.chatHistory[streamIdx].content += evt.delta.text;
+              rerender(); scrollChat();
+            }
+          } catch(e) {}
+        }
+      }
+      const reply = p1State.chatHistory[streamIdx]?.content || 'No response received.';
     } catch(e) {
       p1State.chatHistory = p1State.chatHistory.filter(m=>!m.loading);
       p1State.chatHistory.push({ role:'ai', content:'⚠️ ' + (e.message || 'API error — check your API key.') });
@@ -5340,8 +5364,8 @@ window.aovSend = async () => {
       .map(m => ({ role: m.r==='u' ? 'user' : 'assistant', content: typeof m.c === 'string' ? m.c : 'image message' }));
     const messages = [...historyMsgs, { role:'user', content: userContent }];
 
-    // Use sonnet for image analysis, haiku for text-only
-    const model = 'claude-sonnet-4-5'; // sonnet for all clinical analysis
+    // Use sonnet for all clinical analysis
+    const model = 'claude-sonnet-4-20250514';
 
     console.log('[aovSend] key length:', _apiKey.length, 'images:', images.length, 'model:', model);
     if (images.length) console.log('[aovSend] first image prefix:', images[0]?.slice(0,50));
@@ -5353,7 +5377,7 @@ window.aovSend = async () => {
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
-      body: JSON.stringify({ model, max_tokens: 2000, system: sys, messages })
+      body: JSON.stringify({ model, max_tokens: 2000, stream: true, system: sys, messages })
     });
     console.log('[aovSend] response status:', res.status);
 
@@ -5361,17 +5385,36 @@ window.aovSend = async () => {
       window._apiKeyMemory = '';
       throw new Error('API key invalid or missing. Click "Set API Key" in the top bar.');
     }
-    const data = await res.json();
-    if (data.error) {
-      const msg = data.error.message || data.error.type || 'API error';
-      if (data.error.type === 'authentication_error' || msg.includes('api-key') || msg.includes('API key')) {
-        window._apiKeyMemory = '';
-      }
-      throw new Error(msg);
-    }
-    const reply = data.content?.find(b => b.type === 'text')?.text || 'No response received.';
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'API error'); }
+
+    // Streaming — show tokens as they arrive
     AOV.chat = AOV.chat.filter(m => !m.loading);
-    AOV.chat.push({r:'a', c: reply});
+    AOV.chat.push({r:'a', c: ''});
+    const streamIdx = AOV.chat.length - 1;
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const json = line.slice(6).trim();
+        if (json === '[DONE]') break;
+        try {
+          const evt = JSON.parse(json);
+          if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+            AOV.chat[streamIdx].c += evt.delta.text;
+            aovRenderChat();
+            const msgs = document.getElementById('aov-msgs');
+            if (msgs) msgs.scrollTop = msgs.scrollHeight;
+          }
+        } catch(e) {}
+      }
+    }
 
   } catch(err) {
     console.error('aovSend error:', err);
@@ -6288,15 +6331,35 @@ Provide a structured clinical review working through each level. Be concise — 
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5',
-        max_tokens: 1500,
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1800,
+        stream: true,
         messages: [{ role: 'user', content: prompt }]
       })
     });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    const reply = data.content?.find(b => b.type === 'text')?.text || 'No response.';
-    if (output) { output.textContent = reply; output.style.display = 'block'; }
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'API error'); }
+    if (output) { output.textContent = ''; output.style.display = 'block'; }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const json = line.slice(6).trim();
+        if (json === '[DONE]') break;
+        try {
+          const evt = JSON.parse(json);
+          if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+            if (output) output.textContent += evt.delta.text;
+          }
+        } catch(e) {}
+      }
+    }
     if (status) status.textContent = '✓ Analysis complete';
   } catch(e) {
     if (status) status.textContent = '⚠ ' + (e.message || 'API error');

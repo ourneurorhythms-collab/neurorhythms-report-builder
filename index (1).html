@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- NR-ReportBuilder v5.24 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -733,6 +734,11 @@
 </style>
 
 <script>
+// ── GLOBAL API KEY STORE ─────────────────────────────────────────────────────
+// Declared in the first script block so ALL subsequent script blocks can access it.
+// window._apiKeyMemory survives Tracking Prevention that blocks localStorage.
+window._apiKeyMemory = '';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // NEURO RHYTHMS — CONNECTIVITY ENGINE v1.0
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1205,6 +1211,11 @@ if (typeof module !== 'undefined' && module.exports) {
 
 </script>
 <script>
+// ── GLOBAL API KEY STORE ──────────────────────────────────────────────────
+// Declared first so ALL script blocks can access it.
+// window._apiKeyMemory survives Tracking Prevention that blocks localStorage.
+window._apiKeyMemory = '';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // NEURO RHYTHMS — CONNECTIVITY UI v1.0
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2183,6 +2194,11 @@ const NR_CONNECTIVITY_UI = (() => {
                   ? `<div style="position:relative;display:inline-block">
                       <img data-roi-src-field="${idx}" data-roi-src-type="image" onclick="_rlOpen(this.src)" style="width:150px;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;cursor:zoom-in" />
                       <button onclick="event.stopPropagation();STATE.powerCouplingICs[${idx}].image=null;NR_CONNECTIVITY_UI._removeIC(-1)" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:white;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:1" title="Remove image">✕</button>
+                      <div style="display:flex;gap:3px;margin-top:3px">
+                        <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].image,'p1')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#4A90D9,#6B5EA8);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P1</button>
+                        <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].image,'p2')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#6B5EA8,#C2527A);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P2</button>
+                        <button onclick="event.stopPropagation();aovAddToViewer(STATE.powerCouplingICs[${idx}].image)" style="flex:1;padding:3px 0;background:#2D3748;color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer">📌</button>
+                      </div>
                      </div>`
                   : `<label for="nc-roi-p2p-img-${idx}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:150px;height:90px;border:1.5px dashed #cbd5e0;border-radius:6px;cursor:pointer;background:#f7fafc;font-size:10px;color:#a0aec0;gap:4px;text-align:center;padding:6px">📊 P2P Matrix</label>`}
                 <input type="file" id="nc-roi-p2p-img-${idx}" accept="image/png,image/jpeg,image/jpg,image/*" style="display:none" onchange="_p2pUpload(this,${idx},'image')" />
@@ -2191,6 +2207,11 @@ const NR_CONNECTIVITY_UI = (() => {
                   ? `<div style="position:relative;display:inline-block">
                       <img data-roi-src-field="${idx}" data-roi-src-type="icImage" onclick="_rlOpen(this.src)" style="width:150px;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;cursor:zoom-in" />
                       <button onclick="event.stopPropagation();STATE.powerCouplingICs[${idx}].icImage=null;NR_CONNECTIVITY_UI._refreshP2P()" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:white;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:1" title="Remove image">✕</button>
+                      <div style="display:flex;gap:3px;margin-top:3px">
+                        <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].icImage,'p1')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#4A90D9,#6B5EA8);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P1</button>
+                        <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].icImage,'p2')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#6B5EA8,#C2527A);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P2</button>
+                        <button onclick="event.stopPropagation();aovAddToViewer(STATE.powerCouplingICs[${idx}].icImage)" style="flex:1;padding:3px 0;background:#2D3748;color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer">📌</button>
+                      </div>
                      </div>`
                   : `<label for="nc-roi-ic-img-${idx}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:150px;height:90px;border:1.5px dashed #cbd5e0;border-radius:6px;cursor:pointer;background:#f7fafc;font-size:10px;color:#a0aec0;gap:4px;text-align:center;padding:6px">🧠 IC Figure</label>`}
                 <input type="file" id="nc-roi-ic-img-${idx}" accept="image/png,image/jpeg,image/jpg,image/*" style="display:none" onchange="_p2pUpload(this,${idx},'icImage')" />
@@ -2199,6 +2220,11 @@ const NR_CONNECTIVITY_UI = (() => {
                   ? `<div style="position:relative;display:inline-block">
                       <img data-roi-src-field="${idx}" data-roi-src-type="loretaImage" onclick="_rlOpen(this.src)" style="width:150px;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;cursor:zoom-in" />
                       <button onclick="event.stopPropagation();STATE.powerCouplingICs[${idx}].loretaImage=null;NR_CONNECTIVITY_UI._refreshP2P()" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:white;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:1" title="Remove image">✕</button>
+                      <div style="display:flex;gap:3px;margin-top:3px">
+                        <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].loretaImage,'p1')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#4A90D9,#6B5EA8);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P1</button>
+                        <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].loretaImage,'p2')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#6B5EA8,#C2527A);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P2</button>
+                        <button onclick="event.stopPropagation();aovAddToViewer(STATE.powerCouplingICs[${idx}].loretaImage)" style="flex:1;padding:3px 0;background:#2D3748;color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer">📌</button>
+                      </div>
                      </div>`
                   : `<label for="nc-roi-loreta-img-${idx}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:150px;height:90px;border:1.5px dashed #cbd5e0;border-radius:6px;cursor:pointer;background:#f7fafc;font-size:10px;color:#a0aec0;gap:4px;text-align:center;padding:6px">📍 LORETA Image</label>`}
                 <input type="file" id="nc-roi-loreta-img-${idx}" accept="image/png,image/jpeg,image/jpg,image/*" style="display:none" onchange="_p2pUpload(this,${idx},'loretaImage')" />
@@ -2955,27 +2981,6 @@ if (typeof module !== 'undefined' && module.exports) {
   </div>
 </div>
 
-<!-- REPORT LOG DETAIL MODAL -->
-<div class="rl-overlay hidden" id="rl-overlay" onclick="if(event.target===this)closeRL()">
-  <div class="rl-modal">
-    <div class="rl-header">
-      <div>
-        <div style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--navy)" id="rl-modal-title">QEEG Report</div>
-        <div style="font-size:13px;color:var(--gray);margin-top:3px" id="rl-modal-sub"></div>
-      </div>
-      <button onclick="closeRL()" style="width:30px;height:30px;border-radius:50%;border:none;background:var(--light);cursor:pointer;font-size:15px;flex-shrink:0">&#x2715;</button>
-    </div>
-    <div class="rl-body" id="rl-modal-body"></div>
-    <div class="rl-footer" style="justify-content:space-between">
-      <button onclick="deleteReportLog()" style="background:none;border:1.5px solid var(--pink);color:var(--pink);padding:7px 16px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">&#x1F5D1; Delete</button>
-      <div style="display:flex;gap:10px;align-items:center">
-        <button onclick="closeRL()" style="background:none;border:1.5px solid var(--rule);color:var(--gray);padding:7px 16px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer">Close</button>
-        <button onclick="loadReportIntoBuilder()" style="background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;padding:7px 20px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:7px">&#x270F;&#xFE0F; Open in Report Builder</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <!-- ════════════════════════════════════════════════════════════
      STATE
 ════════════════════════════════════════════════════════════ -->
@@ -3410,6 +3415,10 @@ SECTIONS.baseline = () => {
 };
 /* ── BRAIN MAPS ── */
 SECTIONS.maps = () => {
+  // Clear registry on each render — prevents unbounded memory accumulation
+  Object.keys(_mapGridRegistry).forEach(k => delete _mapGridRegistry[k]);
+  _mapGridCounter = 0;
+
   // helper: render uploaded image array as thumbnail grid
   function mapThumbGrid(arr, label) {
     if (!arr || arr.length === 0) return '';
@@ -3767,8 +3776,13 @@ SECTIONS.network = () => {
       <div style="font-size:9px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:.7px;margin-bottom:3px">P2P Matrix</div>
       ${ic.image
         ? `<div style="position:relative;display:inline-block">
-            <img data-p2p-src-field="${idx}" data-p2p-src-type="image" onclick="_rlOpen(this.src)" style="width:150px;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;cursor:zoom-in" />
+            <img src="" data-p2p-src-field="${idx}" data-p2p-src-type="image" onclick="_rlOpen(this.src)" style="width:150px;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;cursor:zoom-in" />
             <button onclick="event.stopPropagation();_p2pDelete(${idx},'image','net')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:white;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
+            <div style="display:flex;gap:3px;margin-top:3px">
+              <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].image,'p1')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#4A90D9,#6B5EA8);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P1</button>
+              <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].image,'p2')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#6B5EA8,#C2527A);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P2</button>
+              <button onclick="event.stopPropagation();aovAddToViewer(STATE.powerCouplingICs[${idx}].image)" style="flex:1;padding:3px 0;background:#2D3748;color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer">📌</button>
+            </div>
            </div>`
         : `<label for="nc-p2p-img-${idx}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:150px;height:90px;border:1.5px dashed #cbd5e0;border-radius:6px;cursor:pointer;background:#f7fafc;font-size:10px;color:#a0aec0;gap:4px;text-align:center;padding:6px">📊 P2P Matrix</label>`}
       <input type="file" id="nc-p2p-img-${idx}" accept="image/png,image/jpeg,image/jpg,image/*" style="display:none"
@@ -3776,8 +3790,13 @@ SECTIONS.network = () => {
       <div style="font-size:9px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:.7px;margin-top:6px;margin-bottom:3px">IC Figure</div>
       ${ic.icImage
         ? `<div style="position:relative;display:inline-block">
-            <img data-p2p-src-field="${idx}" data-p2p-src-type="icImage" onclick="_rlOpen(this.src)" style="width:150px;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;cursor:zoom-in" />
+            <img src="" data-p2p-src-field="${idx}" data-p2p-src-type="icImage" onclick="_rlOpen(this.src)" style="width:150px;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;cursor:zoom-in" />
             <button onclick="event.stopPropagation();_p2pDelete(${idx},'icImage','net')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:white;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
+            <div style="display:flex;gap:3px;margin-top:3px">
+              <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].icImage,'p1')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#4A90D9,#6B5EA8);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P1</button>
+              <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].icImage,'p2')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#6B5EA8,#C2527A);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P2</button>
+              <button onclick="event.stopPropagation();aovAddToViewer(STATE.powerCouplingICs[${idx}].icImage)" style="flex:1;padding:3px 0;background:#2D3748;color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer">📌</button>
+            </div>
            </div>`
         : `<label for="nc-ic-img-${idx}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:150px;height:90px;border:1.5px dashed #cbd5e0;border-radius:6px;cursor:pointer;background:#f7fafc;font-size:10px;color:#a0aec0;gap:4px;text-align:center;padding:6px">🧠 IC Figure</label>`}
       <input type="file" id="nc-ic-img-${idx}" accept="image/png,image/jpeg,image/jpg,image/*" style="display:none"
@@ -3785,8 +3804,13 @@ SECTIONS.network = () => {
       <div style="font-size:9px;font-weight:700;color:#4a5568;text-transform:uppercase;letter-spacing:.7px;margin-top:6px;margin-bottom:3px">LORETA</div>
       ${ic.loretaImage
         ? `<div style="position:relative;display:inline-block">
-            <img data-p2p-src-field="${idx}" data-p2p-src-type="loretaImage" onclick="_rlOpen(this.src)" style="width:150px;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;cursor:zoom-in" />
+            <img src="" data-p2p-src-field="${idx}" data-p2p-src-type="loretaImage" onclick="_rlOpen(this.src)" style="width:150px;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;cursor:zoom-in" />
             <button onclick="event.stopPropagation();_p2pDelete(${idx},'loretaImage','net')" style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:white;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:1">✕</button>
+            <div style="display:flex;gap:3px;margin-top:3px">
+              <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].loretaImage,'p1')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#4A90D9,#6B5EA8);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P1</button>
+              <button onclick="event.stopPropagation();_doSendToAssessment(STATE.powerCouplingICs[${idx}].loretaImage,'p2')" style="flex:1;padding:3px 0;background:linear-gradient(135deg,#6B5EA8,#C2527A);color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer;letter-spacing:.3px">P2</button>
+              <button onclick="event.stopPropagation();aovAddToViewer(STATE.powerCouplingICs[${idx}].loretaImage)" style="flex:1;padding:3px 0;background:#2D3748;color:white;border:none;border-radius:4px;font-size:9px;font-weight:700;cursor:pointer">📌</button>
+            </div>
            </div>`
         : `<label for="nc-loreta-img-${idx}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:150px;height:90px;border:1.5px dashed #cbd5e0;border-radius:6px;cursor:pointer;background:#f7fafc;font-size:10px;color:#a0aec0;gap:4px;text-align:center;padding:6px">📍 LORETA</label>`}
       <input type="file" id="nc-loreta-img-${idx}" accept="image/png,image/jpeg,image/jpg,image/*" style="display:none"
@@ -4513,7 +4537,7 @@ function renderPhase1Tool() {
     Array.from(input.files).forEach(file => {
       const reader = new FileReader();
       reader.onload = ev => {
-        p1State.pendingImages.push(ev.target.result);
+        p1State.pendingImages.push(normalizeDataUrl(ev.target.result));
         const preview = document.getElementById('p1-img-preview-row');
         if (!preview) return;
         const idx = p1State.pendingImages.length - 1;
@@ -4570,9 +4594,13 @@ Keep responses concise, clinically grounded, and actionable. Use plain language 
     if (images.length) {
       userApiContent = [];
       images.forEach(dataUrl => {
-        const match = dataUrl.match(/^data:(image\/[a-z+]+);base64,(.+)$/);
+        const match = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,([\s\S]+)$/);
         if (match) {
-          userApiContent.push({ type:'image', source:{ type:'base64', media_type:match[1], data:match[2] } });
+          let mediaType = match[1].toLowerCase();
+          if (mediaType === 'image/jpg') mediaType = 'image/jpeg';
+          if (!['image/jpeg','image/png','image/gif','image/webp'].includes(mediaType)) mediaType = 'image/png';
+          const cleanB64 = match[2].replace(/\s/g, '');
+          userApiContent.push({ type:'image', source:{ type:'base64', media_type: mediaType, data: cleanB64 } });
         }
       });
       userApiContent.push({ type:'text', text: text || 'Please analyze this image in the context of my Phase 1 EEG review.' });
@@ -4600,27 +4628,30 @@ Keep responses concise, clinically grounded, and actionable. Use plain language 
       const _k1 = getApiKey();
       if (!_k1) {
         p1State.chatHistory = p1State.chatHistory.filter(m=>!m.loading);
-        p1State.chatHistory.push({ role:'ai', content:'⚠️ No API key set. Click the <b>API Key</b> button in the top bar.' });
-        rerender(); scrollChat(); return;
+        p1State.chatHistory.push({ role:'ai', content:'⚠️ No API key set. Click the <strong>API Key</strong> button in the top bar, paste your key, and click Save.' });
+        rerender(); scrollChat();
+        if (btn) btn.disabled = false;
+        return;
       }
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method:'POST',
         headers:{'Content-Type':'application/json','x-api-key':_k1,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
         body: JSON.stringify({
-          model:'claude-haiku-4-5-20251001',
+          model:'claude-haiku-4-5',
           max_tokens:1000,
           system: systemPrompt,
           messages
         })
       });
       const data = await res.json();
-      if (data.error) throw new Error(data.error.message||JSON.stringify(data.error));
+      if (!res.ok && res.status === 401) { window._apiKeyMemory=''; throw new Error('Invalid API key — click API Key in top bar to reset'); }
+      if (data.error) throw new Error(data.error.message || data.error.type || 'API error');
       const reply = data.content?.find(b=>b.type==='text')?.text || 'No response received.';
       p1State.chatHistory = p1State.chatHistory.filter(m=>!m.loading);
       p1State.chatHistory.push({ role:'ai', content: reply });
     } catch(e) {
       p1State.chatHistory = p1State.chatHistory.filter(m=>!m.loading);
-      p1State.chatHistory.push({ role:'ai', content:'⚠️ API error: '+(e.message||'Check your API key.') });
+      p1State.chatHistory.push({ role:'ai', content:'⚠️ ' + (e.message || 'API error — check your API key.') });
     } finally {
       rerender();
       scrollChat();
@@ -4662,13 +4693,28 @@ Keep responses concise, clinically grounded, and actionable. Use plain language 
 ══════════════════════════════════════════════════════════════ */
 
 // ── API KEY MANAGEMENT ───────────────────────────────────────────────────────
+// ── IMAGE DATA URL NORMALIZER ─────────────────────────────────────────────────
+// Browsers sometimes emit image/jpg instead of image/jpeg — Anthropic API
+// and some docx ImageRun implementations reject image/jpg. Normalize at source.
+function normalizeDataUrl(dataUrl) {
+  if (!dataUrl) return dataUrl;
+  if (dataUrl.startsWith('data:image/jpg;')) return dataUrl.replace('data:image/jpg;', 'data:image/jpeg;');
+  return dataUrl;
+}
+
 function getApiKey() {
-  return localStorage.getItem('nr_api_key') || '';
+  if (window._apiKeyMemory) return window._apiKeyMemory;
+  if (getApiKey._stored) return getApiKey._stored;
+  try { const k = localStorage.getItem('nr_api_key'); if (k) { window._apiKeyMemory = k; return k; } } catch(e) {}
+  return '';
 }
 function saveApiKey() {
   const val = document.getElementById('api-key-input')?.value?.trim();
   if (!val) return;
-  localStorage.setItem('nr_api_key', val);
+  window._apiKeyMemory = val;
+  getApiKey._stored = val;
+  console.log('[saveApiKey] saved key length:', val.length, 'starts with:', val.slice(0,10));
+  try { localStorage.setItem('nr_api_key', val); } catch(e) { console.warn('[saveApiKey] localStorage blocked:', e.message); }
   updateApiKeyIndicator();
   const msg = document.getElementById('api-key-msg');
   if (msg) { msg.style.display='block'; setTimeout(()=>{ msg.style.display='none'; toggleApiKeyInput(); },1200); }
@@ -4684,6 +4730,9 @@ function toggleApiKeyInput(e) {
     if (inp) { inp.value = getApiKey(); setTimeout(()=>inp.focus(), 50); }
   }
 }
+// Pre-load API key from localStorage into memory on page load
+try { const _saved = localStorage.getItem('nr_api_key'); if (_saved) window._apiKeyMemory = _saved; } catch(e) {}
+
 function updateApiKeyIndicator() {
   const dot = document.getElementById('api-key-indicator');
   if (!dot) return;
@@ -5186,7 +5235,7 @@ window.aovAddImages = function(input) {
     var reader = new FileReader();
     reader.onerror = function(e) { console.error('[AOV] FileReader error:', e); };
     reader.onload = function(ev) {
-      var src = ev.target.result; // data URL — used for API sending and as fallback display
+      var src = normalizeDataUrl(ev.target.result); // data URL — used for API sending and as fallback display
       if (!src) return;
 
       // Try blob URL for display (better cross-format support on https://)
@@ -5235,6 +5284,21 @@ window.aovAddImages = function(input) {
   input.value = '';
 };
 
+// Direct image send — bypasses pendingImages queue entirely
+// Called when user clicks a tray image's send button
+window.aovSendImage = async function(src) {
+  if (!AOV.pendingImages) AOV.pendingImages = [];
+  AOV.pendingImages = [src]; // set exactly this image
+  // Reset tray ATTACH states
+  document.querySelectorAll('[data-tray-src]').forEach(el => el.remove());
+  document.querySelectorAll('.aov-float-thumb').forEach(th => {
+    const ab = th.querySelector('button:last-child');
+    if (ab) { ab.textContent = '📎 ATTACH'; ab.style.background = 'rgba(26,26,46,.82)'; }
+    th.style.outline = '';
+  });
+  await window.aovSend();
+};
+
 window.aovSend = async () => {
   // Always grab button reference first for guaranteed re-enable
   const sb = document.getElementById('aov-sendbtn');
@@ -5242,12 +5306,18 @@ window.aovSend = async () => {
   if (!inp) { console.error('[AOV] No input element found!'); return; }
 
   const text = inp.value.trim();
-  const images = [...(AOV.pendingImages || [])];
+  // Build image list — always prefer _queuedImage if set
+  let images = [];
+  if (AOV.pendingImages && AOV.pendingImages.length) {
+    images = [...AOV.pendingImages];
+  }
+  console.log('[aovSend] text:', text.length, 'images:', images.length);
   if (!text && !images.length) return;
 
-  // Clear input + pending images
+  // Clear input + queued images
   inp.value = ''; inp.style.height = 'auto';
   AOV.pendingImages = [];
+  AOV._queuedImage = null;
   const previewRow = document.getElementById('aov-img-preview-row');
   if (previewRow) previewRow.innerHTML = '';
   if (sb) sb.disabled = true;
@@ -5268,20 +5338,42 @@ window.aovSend = async () => {
 
     const p1ctx = 'PHASE 1 — Raw EEG: ICA cleaning, paroxysmal activity screening, amplitude irregularities, residual artifact. Spectrals: 1/f slope, PDR + A/P gradient, frontal alpha asymmetry (F3 vs F4), theta/beta ratio, high beta, alpha blocking EC vs EO, SMR 12-15Hz, IAPF. Headmaps: Z-score topographic maps confirming spectral findings spatially.';
     const p2ctx = 'PHASE 2 — Track A: ICA component review (topographic map, dipole, spectrum, artifact pattern) → LORETA source localization → Power2Power coupling (theta-gamma=working memory, theta-beta=arousal, alpha-gamma=attention). Track B: ROI FC matrix 7 regions (Cingulate, Prefrontal, Frontal, Temporal, Parietal, Central, Occipital). Alpha should be posterior-dominant.';
-    const sys = 'You are an AI clinical assistant in the Neuro Rhythms QEEG Report Builder supporting practitioner Justin Reid (M.S. Psychophysiology, BCN). SCOPE: optimal functioning, neurofeedback, neuromodulation, biofeedback — NOT diagnosis. Frame as considerations and neurophysiological associations only. Never say "do X" or "the protocol should be Y".'
-      + ' ' + (phase === 'p1' ? p1ctx : p2ctx)
-      + (flagged.length ? ' Current flags: ' + flagged.join(', ') + '.' : '')
+    const sys = 'You are a QEEG clinical analysis assistant in the Neuro Rhythms Report Builder, supporting Justin Reid (M.S. Psychophysiology, BCN). '
+      + 'SCOPE: neurofeedback, neuromodulation, biofeedback for optimal functioning — NOT medical diagnosis or treatment. '
+      + 'LANGUAGE: Use precise neurophysiological terminology. Frame findings as observations and associations, never directives. '
+      + 'ACCURACY: Be specific and conservative. Only describe what is clearly visible. Do not infer beyond the data. Flag uncertainty explicitly. '
+      + 'FORMAT: Lead with the most clinically significant observation. Use short paragraphs. Bold key terms. '
+      + 'When analyzing images: describe exactly what you see — band amplitudes, topographic distribution, asymmetries, slope, peaks — before interpreting. '
+      + (phase === 'p1' ? p1ctx : p2ctx)
+      + (flagged.length ? ' Active flags: ' + flagged.join(', ') + '.' : '')
       + (p1flags.length ? ' Phase 1 flags carried forward: ' + p1flags.join(', ') + '.' : '')
-      + (nd ? ' Selected node: ' + nd.title + ' — ' + (nd.desc||'') + '.' : '')
-      + ' When images are shared analyze carefully and provide neurophysiological context. Respond concisely.';
+      + (nd ? ' Selected node: ' + nd.title + ' — ' + (nd.desc||'') + '.' : '');
+
+    // Check API key - if missing, show inline prompt
+    const _apiKey = getApiKey();
+    if (!_apiKey) {
+      AOV.chat = (AOV.chat||[]).filter(m => !m.loading);
+      AOV.chat.push({r:'a', c: '🔑 <strong>API key required.</strong> Click <strong>API Key</strong> in the top bar, paste your key from console.anthropic.com, and click Save.'});
+      aovRenderChat();
+      if (sb) sb.disabled = false;
+      return;
+    }
 
     // Build message content
     let userContent;
     if (images.length) {
       userContent = [];
       images.forEach(dataUrl => {
-        const m = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,(.+)$/);
-        if (m) userContent.push({ type:'image', source:{ type:'base64', media_type:m[1], data:m[2] } });
+        const m = dataUrl.match(/^data:(image\/[a-zA-Z+]+);base64,([\s\S]+)$/);
+        if (m) {
+          // Trim whitespace/newlines from base64 data - they corrupt the payload
+          const cleanB64 = m[2].replace(/\s/g, '');
+          // Normalize media type — API only accepts jpeg not jpg
+          let mediaType = m[1].toLowerCase();
+          if (mediaType === 'image/jpg') mediaType = 'image/jpeg';
+          if (!['image/jpeg','image/png','image/gif','image/webp'].includes(mediaType)) mediaType = 'image/png';
+          userContent.push({ type:'image', source:{ type:'base64', media_type: mediaType, data: cleanB64 } });
+        }
       });
       userContent.push({ type:'text', text: text || 'Please analyze this image in the context of my current assessment.' });
     } else {
@@ -5294,21 +5386,34 @@ window.aovSend = async () => {
     const messages = [...historyMsgs, { role:'user', content: userContent }];
 
     // Use sonnet for image analysis, haiku for text-only
-    const model = images.length ? 'claude-sonnet-4-5-20251001' : 'claude-haiku-4-5-20251001';
+    const model = 'claude-sonnet-4-5'; // sonnet for all clinical analysis
 
+    console.log('[aovSend] key length:', _apiKey.length, 'images:', images.length, 'model:', model);
+    if (images.length) console.log('[aovSend] first image prefix:', images[0]?.slice(0,50));
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': getApiKey(),
+        'x-api-key': _apiKey,
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
-      body: JSON.stringify({ model, max_tokens: 1500, system: sys, messages })
+      body: JSON.stringify({ model, max_tokens: 2000, system: sys, messages })
     });
+    console.log('[aovSend] response status:', res.status);
 
+    if (!res.ok && (res.status === 401 || res.status === 404)) {
+      window._apiKeyMemory = '';
+      throw new Error('API key invalid or missing. Click "Set API Key" in the top bar.');
+    }
     const data = await res.json();
-    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    if (data.error) {
+      const msg = data.error.message || data.error.type || 'API error';
+      if (data.error.type === 'authentication_error' || msg.includes('api-key') || msg.includes('API key')) {
+        window._apiKeyMemory = '';
+      }
+      throw new Error(msg);
+    }
     const reply = data.content?.find(b => b.type === 'text')?.text || 'No response received.';
     AOV.chat = AOV.chat.filter(m => !m.loading);
     AOV.chat.push({r:'a', c: reply});
@@ -5316,7 +5421,8 @@ window.aovSend = async () => {
   } catch(err) {
     console.error('aovSend error:', err);
     AOV.chat = (AOV.chat||[]).filter(m => !m.loading);
-    AOV.chat.push({r:'a', c: '⚠️ ' + (err.message || 'Connection error — check your API key in the top bar.')});
+    const isKeyErr = err.message && (err.message.includes('API key') || err.message.includes('api-key') || err.message.includes('authentication'));
+    AOV.chat.push({r:'a', c: '⚠️ ' + (err.message || 'Connection error.') + (isKeyErr ? ' Click <strong>Set API Key</strong> in the top bar.' : '')});
   } finally {
     aovRenderChat();
     const msgs = document.getElementById('aov-msgs');
@@ -5331,7 +5437,7 @@ window.openAssessmentOverlay = function(phase) {
   if (!AOV.flags) AOV.flags = {p1:{}, p2:{}};
   if (!AOV.chat) AOV.chat = [];
   if (!AOV.pendingImages) AOV.pendingImages = [];
-  AOV.pendingImages = []; // always clear pending on re-open
+  // Don't clear pendingImages here — images may be queued by _doSendToAssessment
   if (!AOV.sessionImages) AOV.sessionImages = []; // preserve session images across re-opens
 
   // Always destroy and recreate — eliminates all stale state/binding issues
@@ -5342,6 +5448,8 @@ window.openAssessmentOverlay = function(phase) {
   ov.id = 'aov-overlay';
   ov.className = 'aov';
 
+  // Show API key status in overlay
+  var _keyOk = !!getApiKey();
   var p1flags = Object.keys(AOV.flags.p1||{}).filter(function(k){return AOV.flags.p1[k];});
   var p2CarryHTML = '';
   if (phase==='p2') {
@@ -5358,6 +5466,7 @@ window.openAssessmentOverlay = function(phase) {
         '<div class="aov-sub" id="aov-phase-sub">' + (phase==='p1'?'Phase 1 Assessment':'Phase 2 Assessment') + '</div>',
       '</div>',
       '<div class="aov-badge" id="aov-phase-badge">' + (phase==='p1'?'&#x1F52C; Raw EEG &middot; Spectrals &middot; Headmaps':'&#x1F52C; ICA &middot; LORETA &middot; Coupling &middot; ROI') + '</div>',
+      '<button onclick="toggleApiKeyInput(event)" title="' + (_keyOk?'API key set':'No API key — click to set') + '" style="display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;background:' + (_keyOk?'rgba(72,187,120,.15)':'rgba(255,100,100,.2)') + ';border:1px solid ' + (_keyOk?'rgba(72,187,120,.5)':'rgba(255,100,100,.5)') + ';color:' + (_keyOk?'#9AE6B4':'#FCA5A5') + ';font-size:11px;font-weight:600;cursor:pointer;font-family:DM Sans,sans-serif;white-space:nowrap"><span style=\"width:7px;height:7px;border-radius:50%;background:' + (_keyOk?'#48BB78':'#F87171') + ';flex-shrink:0\"></span>' + (_keyOk?'API Key ✓':'Set API Key') + '</button>',
     '</div>',
     '<div class="aov-scope">&#9888; Observations and considerations only &middot; All clinical decisions reviewed with supervisor and clinical team &middot; Not for diagnostic use</div>',
     p2CarryHTML,
@@ -5834,17 +5943,41 @@ function aovAddToTray(src) {
   const sz = _floatThumbSize;
   const thumb = document.createElement('div');
   thumb.className = 'aov-float-thumb';
-  thumb.style.cssText = `width:${sz}px;height:${sz}px`;
+  thumb.style.cssText = `width:${sz}px;height:${sz}px;position:relative`;
+
+  // Image — click to zoom/expand
   const tImg = document.createElement('img');
   tImg.alt = '';
-  tImg.onerror = function() { console.error('[tray] img load failed, prefix:', (src||"").slice(0,40)); };
   tImg.src = src;
-  tImg.onclick = function() { aovFloatExpand(src); };
+  tImg.title = 'Click to zoom';
+  tImg.style.cssText = 'display:block;width:100%;height:100%;object-fit:contain;background:#F7F8FA;border-radius:4px;cursor:zoom-in';
+  tImg.onclick = function(e) { e.stopPropagation(); aovFloatExpand(src); };
+
+  // Remove button (top right)
   const tBtn = document.createElement('button');
   tBtn.className = 'aov-float-thumb-remove';
   tBtn.textContent = '✕';
+  tBtn.title = 'Remove';
   tBtn.onclick = function(e) { e.stopPropagation(); aovRemoveFromTray(idx, thumb); };
+
+  // Send button (bottom bar) — queues image and fires send
+  const _thumbSrc = src;
+  const sendBtn = document.createElement('button');
+  sendBtn.title = 'Send this image to AI';
+  sendBtn.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:rgba(74,144,217,.9);color:white;font-size:8px;font-weight:700;text-align:center;padding:3px;border:none;border-radius:0 0 4px 4px;cursor:pointer;letter-spacing:.3px';
+  sendBtn.textContent = '▶ ANALYZE';
+  sendBtn.onclick = function(e) {
+    e.stopPropagation();
+    AOV._queuedImage = _thumbSrc;
+    AOV.pendingImages = [_thumbSrc];
+    sendBtn.textContent = 'SENDING...';
+    sendBtn.style.background = 'rgba(72,187,120,.9)';
+    thumb.style.outline = '2px solid #48BB78';
+    setTimeout(() => window.aovSend(), 80);
+  };
+
   thumb.appendChild(tImg);
+  thumb.appendChild(sendBtn);
   thumb.appendChild(tBtn);
   imgs.appendChild(thumb);
   panel.classList.add('visible');
@@ -5927,38 +6060,19 @@ function aovAddToViewer(src) {
 }
 
 function _doSendToAssessment(src, phase) {
-  // Open the overlay for the right phase
+  if (!AOV.sessionImages) AOV.sessionImages = [];
+  AOV.sessionImages.push(src);
+  // Do NOT auto-queue — user will click ANALYZE button to send
+  AOV._queuedImage = null;
+  AOV.pendingImages = [];
+  // Open overlay
   openAssessmentOverlay(phase);
-  // Give overlay a moment to render, then add to tray + pending
+  // After overlay DOM ready: add to tray only
   setTimeout(() => {
-    AOV.sessionImages.push(src);
-    aovAddToTray(src);
-    // Also queue in pending send
-    AOV.pendingImages.push(src);
-    const preview = document.getElementById('aov-img-preview-row');
-    if (preview) {
-      const idx = AOV.pendingImages.length - 1;
-      const thumb = document.createElement('div');
-      thumb.className = 'aov-img-thumb';
-      thumb.id = 'aov-pending-thumb-' + idx;
-      const tImg = document.createElement('img');
-      tImg.src = src;
-      tImg.style.cssText = 'height:52px;border-radius:6px;border:1px solid #CBD5E0;display:block';
-      const tBtn = document.createElement('button');
-      tBtn.textContent = '✕';
-      tBtn.style.cssText = 'position:absolute;top:2px;right:2px;background:rgba(0,0,0,.55);color:white;border:none;border-radius:3px;padding:1px 5px;cursor:pointer;font-size:10px;line-height:1.4';
-      tBtn.onclick = function() { AOV.pendingImages.splice(idx,1); thumb.remove(); };
-      thumb.appendChild(tImg);
-      thumb.appendChild(tBtn);
-      preview.appendChild(thumb);
-    }
-    // Flash the input to draw attention
+    try { aovAddToTray(src); } catch(e) {}
     const inp = document.getElementById('aov-inp');
-    if (inp) {
-      inp.placeholder = 'Image loaded — ask a question about it…';
-      inp.focus();
-    }
-  }, 350);
+    if (inp) { inp.placeholder = 'Image in tray — click image to zoom, click ▶ ANALYZE to send'; }
+  }, 400);
 }
 
 // ── Map thumb send to assessment ─────────────────────────────────────────────
@@ -6107,6 +6221,7 @@ window.aovConfirmImport = function() {
   const imgs = window._aovImportImages;
   if (!sel || !imgs) return;
 
+  if (!AOV.pendingImages) AOV.pendingImages = [];
   const preview = document.getElementById('aov-img-preview-row');
   sel.forEach(i => {
     const src = imgs[i].src;
@@ -6218,7 +6333,7 @@ Provide a structured clinical review working through each level. Be concise — 
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-haiku-4-5',
         max_tokens: 1500,
         messages: [{ role: 'user', content: prompt }]
       })
@@ -6247,44 +6362,14 @@ function _p2pUpload(input, idx, type) {
   reader.onerror = function(e) { console.error('[P2P] FileReader error:', e); };
   reader.onload = function(ev) {
     var result = ev.target.result;
+    // Normalize image/jpg → image/jpeg so API and docx both accept it
+    if (result && result.startsWith('data:image/jpg;')) {
+      result = result.replace('data:image/jpg;', 'data:image/jpeg;');
+    }
     console.log('[P2P] File read OK, data length:', result?.length, 'prefix:', result?.slice(0,30));
     STATE.powerCouplingICs[idx][type] = result;
-    // Update in-place: find the upload slot and replace it with the image
-    // This avoids full section re-render which causes file:// security errors
-    var fieldMap = { image: 'nc-p2p-img-', icImage: 'nc-ic-img-', loretaImage: 'nc-loreta-img-' };
-    var inputId = fieldMap[type] + idx;
-    var fileInput = document.getElementById(inputId);
-    if (fileInput) {
-      // Find the label (sibling before the input) and replace with img+delete button
-      var label = fileInput.previousElementSibling;
-      if (label && (label.tagName === 'LABEL' || label.classList.contains('p2p-upload-btn'))) {
-        var wrapper = document.createElement('div');
-        wrapper.style.cssText = 'position:relative;display:inline-block';
-        var img = document.createElement('img');
-        img.src = result;
-        img.style.cssText = 'width:150px;height:90px;object-fit:cover;border-radius:6px;border:1px solid #e2e8f0;display:block;cursor:zoom-in';
-        img.onclick = function() { if (typeof _rlOpen === 'function') _rlOpen(result); };
-        var delBtn = document.createElement('button');
-        delBtn.textContent = '✕';
-        delBtn.style.cssText = 'position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:white;border:none;cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;line-height:1';
-        delBtn.onclick = function(e) { e.stopPropagation(); _p2pDelete(idx, type, 'net'); };
-        wrapper.appendChild(img);
-        wrapper.appendChild(delBtn);
-        label.parentNode.replaceChild(wrapper, label);
-        fileInput.style.display = 'none';
-      } else {
-        // Fallback: full re-render
-        showSection('network');
-      }
-    } else {
-      // ROI pane or fallback
-      var pane = document.getElementById('nc-pane-p2p');
-      if (pane && pane.closest('#nc-results')) {
-        NR_CONNECTIVITY_UI._refreshP2P();
-      } else {
-        showSection('network');
-      }
-    }
+    // Re-render the section — reliable on https, ensures src assignment and buttons all render correctly
+    showSection('network');
   };
   reader.readAsDataURL(file);
 }
@@ -6301,12 +6386,14 @@ function _p2pDelete(idx, type, context) {
 }
 
 function bindSectionEvents() {
-  // Assign P2P image srcs after render (avoids backtick-in-base64 template corruption)
-  document.querySelectorAll('img[data-p2p-src-field][data-p2p-src-type]').forEach(function(img) {
-    var idx = parseInt(img.dataset.p2pSrcField);
-    var type = img.dataset.p2pSrcType;
-    var ic = STATE.powerCouplingICs && STATE.powerCouplingICs[idx];
-    if (ic && ic[type]) img.src = ic[type];
+  // Assign P2P image srcs after render — use rAF to ensure DOM is fully painted
+  requestAnimationFrame(function() {
+    document.querySelectorAll('img[data-p2p-src-field][data-p2p-src-type]').forEach(function(img) {
+      var idx = parseInt(img.dataset.p2pSrcField);
+      var type = img.dataset.p2pSrcType;
+      var ic = STATE.powerCouplingICs && STATE.powerCouplingICs[idx];
+      if (ic && ic[type]) img.src = ic[type];
+    });
   });
 
   // text inputs & textareas
@@ -6341,7 +6428,7 @@ function bindSectionEvents() {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = ev => {
-        STATE[key] = ev.target.result;
+        STATE[key] = normalizeDataUrl(ev.target.result);
         showSection(currentSection);
       };
       reader.readAsDataURL(file);
@@ -6378,7 +6465,7 @@ function bindSectionEvents() {
       files.forEach(file => {
         const r = new FileReader();
         r.onload = ev => {
-          STATE.findings[i].images.push(ev.target.result);
+          STATE.findings[i].images.push(normalizeDataUrl(ev.target.result));
           done++;
           if (done === files.length) showSection(currentSection);
         };
@@ -7487,6 +7574,7 @@ const IMAGE_KEYS = [
 const ARRAY_IMAGE_KEYS = ['rawEEGExtraImgs','stackedSpecExtraImgs','headMapsExtraImgs','headMapsAdditionalImgs','peakAlphaExtraImgs','networkConnImgs'];
 const _imgStore = {}; // { [clientId_reportNum]: imagePayload }
 
+
 function imgKey(clientId, reportNumber) { return clientId + '_r' + reportNumber; }
 
 const IMG_STORE_PREFIX = 'nr_imgs_';
@@ -8355,8 +8443,14 @@ function dashGenerateCheckin() {
   if (!dmCurrent) return;
   const c = dmCurrent;
   const hasBaseline = c.baselineScores && c.baselineScores.length > 0;
-  const practEmail = STATE.practitionerEmail || prompt('Enter your email address to receive responses:', 'ourneurorhythms@gmail.com');
-  if (!practEmail) return;
+  // Remember practitioner email across sessions
+  let practEmail = '';
+  try { practEmail = localStorage.getItem('nr_pract_email') || ''; } catch(e) {}
+  if (!practEmail) {
+    practEmail = prompt('Enter your email address to receive check-in responses:', 'ourneurorhythms@gmail.com');
+    if (!practEmail) return;
+    try { localStorage.setItem('nr_pract_email', practEmail); } catch(e) {}
+  }
 
   let domainsForCheckin;
 
@@ -9019,8 +9113,10 @@ document.addEventListener('change', function(e) {
     if (!STATE.powerCouplingICs[idx]) return;
     const reader = new FileReader();
     reader.onload = function(ev) {
-      STATE.powerCouplingICs[idx][type] = ev.target.result;
-      NR_CONNECTIVITY_UI._refreshP2P();
+      var result = ev.target.result;
+      if (result && result.startsWith('data:image/jpg;')) result = result.replace('data:image/jpg;', 'data:image/jpeg;');
+      STATE.powerCouplingICs[idx][type] = result;
+      showSection('network');
     };
     reader.readAsDataURL(inp.files[0]);
     inp.value = '';
